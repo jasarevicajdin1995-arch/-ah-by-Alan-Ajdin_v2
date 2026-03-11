@@ -849,3 +849,45 @@ async function init() {
 }
 
 init();
+
+// ═══════════════════════════════════════════════════════════════
+//  PINCH-TO-ZOOM  (fullscreen only)
+// ═══════════════════════════════════════════════════════════════
+(function() {
+  // Camera zoom range: FOV between 20 (zoomed in) and 75 (zoomed out)
+  const FOV_MIN = 20, FOV_MAX = 75;
+  let lastPinchDist = null;
+
+  function pinchDist(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  }
+
+  canvasEl.addEventListener('touchstart', e => {
+    if (!document.body.classList.contains('is-fullscreen')) return;
+    if (e.touches.length === 2) {
+      lastPinchDist = pinchDist(e.touches);
+      e.preventDefault(); // stop page scroll during pinch
+    }
+  }, { passive: false });
+
+  canvasEl.addEventListener('touchmove', e => {
+    if (!document.body.classList.contains('is-fullscreen')) return;
+    if (e.touches.length === 2 && lastPinchDist !== null) {
+      e.preventDefault();
+      const dist = pinchDist(e.touches);
+      const delta = lastPinchDist - dist; // positive = fingers closing = zoom in
+      lastPinchDist = dist;
+
+      // Adjust FOV: spread fingers → zoom in (lower FOV), pinch → zoom out (higher FOV)
+      camera.fov = Math.min(FOV_MAX, Math.max(FOV_MIN, camera.fov + delta * 0.15));
+      camera.updateProjectionMatrix();
+      requestRender();
+    }
+  }, { passive: false });
+
+  canvasEl.addEventListener('touchend', e => {
+    if (e.touches.length < 2) lastPinchDist = null;
+  });
+})();
