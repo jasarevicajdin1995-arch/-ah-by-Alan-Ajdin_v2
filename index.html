@@ -122,6 +122,9 @@
         document.body.classList.remove('is-fullscreen');
         exitFsBtn.classList.add('hidden');
       }
+      // Let CSS settle then force Three.js to resize
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 200);
     }
   </script>
 
